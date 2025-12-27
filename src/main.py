@@ -29,10 +29,8 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
         self.set_child(notebook)
 
         ## elements & settings
-        self.connect_to_vpn = Gtk.Button(label="Build Connection")
-        self.disconnect_from_vpn = Gtk.Button(label="Disconnect")
-        self.user_entry_field = Gtk.Entry()
-
+        self.button_to_connect_vpn = Gtk.Button(label="Build Connection")
+        self.button_to_disconnect_vpn = Gtk.Button(label="Disconnect")
         self.log_view = Gtk.TextView(editable=False, cursor_visible=True)
         self.log_buffer = self.log_view.get_buffer()
         sys.stdout = StdoutRedirector(self.log_buffer)
@@ -41,53 +39,93 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
         scrolled.set_vexpand(True)
         scrolled.set_hexpand(True)
 
-        
-        self.user_pass_entry = Gtk.PasswordEntry()
-        self.user_pass_entry.props.placeholder_text = "Password Entry"
-        self.user_pass_entry.props.show_peek_icon = True
-        
 
         page1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         notebook.append_page(page1, Gtk.Label(label="Main View"))
         page1.append(Gtk.Label(label="Connect to VPN"))
-        page1.append(self.connect_to_vpn)
-        self.connect_to_vpn.connect("clicked", self.build_up_vpn_connection)
+        page1.append(self.button_to_connect_vpn)
+        self.button_to_connect_vpn.connect("clicked", self.build_up_vpn_connection)
         page1.append(Gtk.Label(label="Disconnect from VPN"))
-        page1.append(self.disconnect_from_vpn)
+        page1.append(self.button_to_disconnect_vpn)
+        self.button_to_disconnect_vpn.connect("clicked", self.disconnect_vpn_connection)
 
         page1.props.margin_start = 24
         page1.props.margin_end = 24
         page1.props.margin_top = 24
         page1.props.margin_bottom = 24
 
-
         page2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
         notebook.append_page(page2, Gtk.Label(label="Logs"))
         page2.append(Gtk.Label(label="Logging State"))
         scrolled.set_child(self.log_view)
         page2.append(scrolled)
-        # stdout umleredirect
-        print("Programm gestartet")
-        print("Hallo aus stdout!")
-
-        page3 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)        
-        notebook.append_page(page3, Gtk.Label(label="Enter Fields Test"))
-        page3.append(Gtk.Label(label="User"))
-        page3.append(self.user_entry_field)
-        page3.append(Gtk.Label(label="Password"))
-        page3.append(self.user_pass_entry)
-
+        page2.props.margin_start = 24
+        page2.props.margin_end = 24
+        page2.props.margin_top = 24
+        page2.props.margin_bottom = 24
 
     def build_up_vpn_connection(self, _widget):
-        print("Test")
-        #self.close()
+        print("Connect to VPN")
+        self.credentials_window_popup()
 
+    def disconnect_vpn_connection(self, _widget):
+        print("Disconnect from VPN")
+
+    def credentials_window_popup(self, **kargs):
+        self.credentials_window = Gtk.Window(title="Credentials")
+        self.credentials_window.set_transient_for(self)
+        self.credentials_window.set_modal(True)           
+        self.credentials_window.set_default_size(300, 200)
+        
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
+        self.credentials_window.set_child(page)
+        
+        self.textfield_user_entry = Gtk.Entry()
+        self.textfield_user_entry.set_placeholder_text("Username")
+        self.passfield_user_entry = Gtk.PasswordEntry()
+        self.passfield_user_entry.props.placeholder_text = "Password Entry"
+        self.passfield_user_entry.props.show_peek_icon = True
+    
+        page.append(Gtk.Label(label="User"))
+        page.append(self.textfield_user_entry)
+        page.append(Gtk.Label(label="Password"))
+        page.append(self.passfield_user_entry)
+
+        # Buttons
+        btn_box = Gtk.Box(spacing=10)
+        page.append(btn_box)
+
+        ok_btn = Gtk.Button(label="OK")
+        ok_btn.connect("clicked", self.on_credentials_ok)
+        btn_box.append(ok_btn)
+
+        cancel_btn = Gtk.Button(label="Cancel")
+        cancel_btn.connect("clicked", self.credentials_window.close)
+        btn_box.append(cancel_btn)
+
+        page.props.margin_start = 24
+        page.props.margin_end = 24
+        page.props.margin_top = 24
+        page.props.margin_bottom = 24
+
+        self.credentials_window.present()
+    
+    def on_credentials_ok(self, _widget):
+
+        username = self.textfield_user_entry.get_text()
+        password = self.passfield_user_entry.get_text()
+
+        print("Credentials entered")
+        print(f"Username: {username}")
+        print(f"Password: {password}")
+
+        self.credentials_window.close()
+        self.credentials_window = None
 
 def on_activate(app):
     # Create window
     win = OpenVPNConnector(application=app)
     win.present()
-
 
 app = Gtk.Application(application_id="com.OpenVPNConnector.Application")
 app.connect("activate", on_activate)
