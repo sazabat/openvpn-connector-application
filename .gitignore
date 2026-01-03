@@ -2,3 +2,5 @@
 app_openvpn_connect_gui
 # jhbuild
 jhbuild
+# dist
+dist

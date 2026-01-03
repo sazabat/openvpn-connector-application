@@ -1,8 +1,8 @@
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, GLib
-import sys
+from gi.repository import Gtk, GLib, Gio
+import sys, subprocess
 
 class StdoutRedirector:
     def __init__(self, textbuffer):
@@ -19,7 +19,6 @@ class StdoutRedirector:
         self.textbuffer.insert(end_iter, text)
         return False
 
-
 class OpenVPNConnector(Gtk.ApplicationWindow):
     def __init__(self,**kargs):
 
@@ -27,6 +26,7 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
 
         notebook = Gtk.Notebook()
         self.set_child(notebook)
+        filedescriptor = Gtk.FileDialog
 
         ## elements & settings
         self.button_to_connect_vpn = Gtk.Button(label="Build Connection")
@@ -71,6 +71,19 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
     def disconnect_vpn_connection(self, _widget):
         print("Disconnect from VPN")
 
+    def open_file(self, button):
+        dialog = Gtk.FileDialog()
+        dialog.set_title("Open a file")
+
+        dialog.open(self, None, self.on_file_selected)
+
+    def on_file_selected(self, dialog, result):
+        try:
+            self.selected_file = dialog.open_finish(result)
+            print("Selected file:", self.selected_file.get_path())
+        except Exception as e:
+            print("No file selected:", e)
+
     def credentials_window_popup(self, **kargs):
         self.credentials_window = Gtk.Window(title="Credentials")
         self.credentials_window.set_transient_for(self)
@@ -85,17 +98,23 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
         self.passfield_user_entry = Gtk.PasswordEntry()
         self.passfield_user_entry.props.placeholder_text = "Password Entry"
         self.passfield_user_entry.props.show_peek_icon = True
-    
+
         page.append(Gtk.Label(label="User"))
         page.append(self.textfield_user_entry)
         page.append(Gtk.Label(label="Password"))
         page.append(self.passfield_user_entry)
+        
 
         # Buttons
-        btn_box = Gtk.Box(spacing=10)
+        btn_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         page.append(btn_box)
+        
+        btn_box.append(Gtk.Label(label="Select Config File"))
+        file_dialog_btn = Gtk.Button(label="Config File")
+        file_dialog_btn.connect("clicked", self.open_file)
+        btn_box.append(file_dialog_btn)
 
-        ok_btn = Gtk.Button(label="OK")
+        ok_btn = Gtk.Button(label="Save")
         ok_btn.connect("clicked", self.on_credentials_ok)
         btn_box.append(ok_btn)
 
@@ -107,6 +126,10 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
         page.props.margin_end = 24
         page.props.margin_top = 24
         page.props.margin_bottom = 24
+        btn_box.props.margin_start = 24
+        btn_box.props.margin_end = 24
+        btn_box.props.margin_top = 24
+        btn_box.props.margin_bottom = 24
 
         self.credentials_window.present()
     
@@ -114,10 +137,12 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
 
         username = self.textfield_user_entry.get_text()
         password = self.passfield_user_entry.get_text()
+        file_location = self.selected_file.get_path()
 
         print("Credentials entered")
         print(f"Username: {username}")
         print(f"Password: {password}")
+        print(f"File Path: {file_location}")
 
         self.credentials_window.close()
         self.credentials_window = None
