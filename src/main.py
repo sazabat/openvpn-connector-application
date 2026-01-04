@@ -189,6 +189,10 @@ def on_activate(app):
     win = OpenVPNConnector(application=app)
     win.present()
 
-app = Gtk.Application(application_id="com.OpenVPNConnector.Application")
-app.connect("activate", on_activate)
-app.run(None)
+def main():
+    app = Gtk.Application(application_id="com.OpenVPNConnector.Application")
+    app.connect("activate", on_activate)
+    app.run(None)
+
+if __name__ == "__main__":
+    main()
