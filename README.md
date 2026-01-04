@@ -1,2 +1,2 @@
 # OpenVPN Connector from a simple GUI Window
-Connect to OpenVPN Server with the help of this small gui app
+Connect & Authenticate to your OpenVPN Server with this little application

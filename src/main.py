@@ -98,12 +98,15 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
         self.passfield_user_entry = Gtk.PasswordEntry()
         self.passfield_user_entry.props.placeholder_text = "Password Entry"
         self.passfield_user_entry.props.show_peek_icon = True
+        self.textfield_conn_name_entry = Gtk.Entry()
+        self.textfield_conn_name_entry.set_placeholder_text("Connection Name")
 
         page.append(Gtk.Label(label="User"))
         page.append(self.textfield_user_entry)
         page.append(Gtk.Label(label="Password"))
         page.append(self.passfield_user_entry)
-        
+        page.append(Gtk.Label(label="Connection Name"))
+        page.append(self.textfield_conn_name_entry)
 
         # Buttons
         btn_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -115,7 +118,7 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
         btn_box.append(file_dialog_btn)
 
         ok_btn = Gtk.Button(label="Save")
-        ok_btn.connect("clicked", self.on_credentials_ok)
+        ok_btn.connect("clicked", self.process_user_credentials_build_connection)
         btn_box.append(ok_btn)
 
         cancel_btn = Gtk.Button(label="Cancel")
@@ -133,16 +136,50 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
 
         self.credentials_window.present()
     
-    def on_credentials_ok(self, _widget):
+    def process_user_credentials_build_connection(self, _widget):
 
         username = self.textfield_user_entry.get_text()
         password = self.passfield_user_entry.get_text()
-        file_location = self.selected_file.get_path()
+        vpn_connection_name = self.textfield_conn_name_entry.get_text()
+        ovpn_file_location = self.selected_file.get_path()
 
-        print("Credentials entered")
-        print(f"Username: {username}")
-        print(f"Password: {password}")
-        print(f"File Path: {file_location}")
+        # Debugging purposes only
+        # print("Credentials entered")
+        # print(f"Username: {username}")
+        # print(f"Password: {password}")
+        # print(f"File Path: {ovpn_file_location}")
+
+        results = subprocess.run(['echo', ovpn_file_location, username, password, vpn_connection_name], capture_output=True, text=True)
+        print(f'{results.stdout}')
+        results = subprocess.run(['ip', 'route'], capture_output=True, text=True)
+        print(f'{results.stdout}')
+
+        # # 1. Import config
+        # subprocess.run(
+        #     ["openvpn3", "config-import", "--config", ovpn_file_location, "--name", vpn_connection_name],
+        #     check=True
+        # )
+
+        # # 2. Allow compression
+        # subprocess.run(
+        #     ["openvpn3", "config-manage", "--config", vpn_connection_name, "--allow-compression", "yes"],
+        #     check=True
+        # )
+
+        # # 3. Start session and provide credentials
+        # proc = subprocess.run(
+        #     ["openvpn3", "session-start", "--config", vpn_connection_name],
+        #     input=f"{username}\n{password}\n",
+        #     text=True,
+        #     check=True
+        # )
+
+        # # 4. Check config list
+        # subprocess.run(
+        #     ["openvpn3", "configs-list", "-v"],
+        #     capture_output=True,
+        #     check=True
+        # )
 
         self.credentials_window.close()
         self.credentials_window = None
