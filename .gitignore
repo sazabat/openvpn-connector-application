@@ -2,6 +2,5 @@
 app_openvpn_connect_gui
 
 # build artifacts for executor version
-dist
 build
 main.spec
