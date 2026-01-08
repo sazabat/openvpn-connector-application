@@ -70,21 +70,29 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
 
     def disconnect_vpn_connection(self, _widget):
         print("Disconnect from VPN")
-
-        ovpn_session_name = self.process_user_credentials_build_connection()
-        ovpn_file_location = self.selected_file.get_path()
         
-        # # 1. List actice sessions
+        # # 1. List actice sessions and remove them all
+        cmd = ("openvpn3 sessions-list " "| awk '/Path:/ {print $2}' " "| xargs -n1 openvpn3 session-manage --disconnect --session-path")
         results = subprocess.run(
-            ["openvpn3", "sessions-list", "|", "grep", "Path", "|", "awk", "'{print $2}'"],
+            cmd,
+            shell=True,
+            check=True,
+            capture_output=True
+        )
+        print(f'{results.stdout}')
+        
+        results = subprocess.run(
+            ["openvpn3", "sessions-list"],
             check=True,
             capture_output=True
         )
         print(f'{results.stdout}')
 
-        # # 1. Remove Connection
+        # # 1. List Configs and remove them all
+        cmd = ("openvpn3 configs-list " "| awk 'NR>2 && $1 !~ /^-+/ {print $1}' " "| xargs -n1 openvpn3 config-remove --force --config")
         results = subprocess.run(
-            ["openvpn3", "config-remove", "--config", "ovpn_file_location", "--force"],
+            cmd,
+            shell=True,
             capture_output=True,
             check=True
         )
@@ -168,10 +176,8 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
         # print(f"Password: {password}")
         # print(f"File Path: {ovpn_file_location}")
 
-        results = subprocess.run(['echo', ovpn_file_location, username, password, vpn_connection_name], capture_output=True, text=True)
-        print(f'{results.stdout}')
-        results = subprocess.run(['ip', 'route'], capture_output=True, text=True)
-        print(f'{results.stdout}')
+        #results = subprocess.run(['echo', ovpn_file_location, username, password, vpn_connection_name], capture_output=True, text=True)
+        #print(f'{results.stdout}')
 
         # # 1. Import config
         results = subprocess.run(
@@ -202,10 +208,11 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
         )
         print(f'{results.stdout}')
 
+        # # 5. Check Routes
+        results = subprocess.run(['ip', 'route'], capture_output=True, text=True)
+        print(f'{results.stdout}')
+
         self.credentials_window.close()
-        self.credentials_window = None
-        
-        return vpn_connection_name
 
 def on_activate(app):
     # Create window
