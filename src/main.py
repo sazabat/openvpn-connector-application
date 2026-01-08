@@ -71,21 +71,24 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
     def disconnect_vpn_connection(self, _widget):
         print("Disconnect from VPN")
 
+        ovpn_session_name = self.process_user_credentials_build_connection()
         ovpn_file_location = self.selected_file.get_path()
         
         # # 1. List actice sessions
-        subprocess.run(
+        results = subprocess.run(
             ["openvpn3", "sessions-list", "|", "grep", "Path", "|", "awk", "'{print $2}'"],
             check=True,
             capture_output=True
         )
+        print(f'{results.stdout}')
 
         # # 1. Remove Connection
-        subprocess.run(
+        results = subprocess.run(
             ["openvpn3", "config-remove", "--config", "ovpn_file_location", "--force"],
             capture_output=True,
             check=True
         )
+        print(f'{results.stdout}')
 
     def open_file(self, button):
         dialog = Gtk.FileDialog()
@@ -171,34 +174,38 @@ class OpenVPNConnector(Gtk.ApplicationWindow):
         print(f'{results.stdout}')
 
         # # 1. Import config
-        subprocess.run(
+        results = subprocess.run(
             ["openvpn3", "config-import", "--config", ovpn_file_location, "--name", vpn_connection_name],
-            check=True
+            check=True, capture_output=True, text=True
         )
+        print(f'{results.stdout}')
 
         # # 2. Allow compression
-        subprocess.run(
+        results = subprocess.run(
             ["openvpn3", "config-manage", "--config", vpn_connection_name, "--allow-compression", "yes"],
-            check=True
+            check=True, capture_output=True, text=True
         )
+        print(f'{results.stdout}')
 
         # # 3. Start session and provide credentials
-        subprocess.run(
+        results = subprocess.run(
             ["openvpn3", "session-start", "--config", vpn_connection_name],
             input=f"{username}\n{password}\n",
-            text=True,
-            check=True
+            check=True, capture_output=True, text=True
         )
+        print(f'{results.stdout}')
 
         # # 4. Check config list
-        subprocess.run(
+        results = subprocess.run(
             ["openvpn3", "configs-list", "-v"],
-            capture_output=True,
-            check=True
+            check=True, capture_output=True, text=True
         )
+        print(f'{results.stdout}')
 
         self.credentials_window.close()
         self.credentials_window = None
+        
+        return vpn_connection_name
 
 def on_activate(app):
     # Create window
